@@ -38,18 +38,21 @@ def search_candidate(seq, candidates_num, digits):
     return "0"
 
 # generate an non-embedding-sequence with n characters
-def gen_embedding_sequence(n):
-    step = 3
-    seq = [33]
+def gen_embedding_sequence():
+    step = 2
+    seq = ['4']
     digits = step
     while digits > 0:
         candidates_num = list("321")
         candidate = search_candidate(seq, candidates_num, digits)
         if candidate != "0":
             seq.append(candidate)
-            print("current seq is %s" % str(seq))
+            #print("current seq is %s" % str(seq))
             step += 1
-            digits = min(step, 48)
+            if len(seq[-1]) <= len(seq[-2]):
+                digits = len(seq[-1])
+            else:
+                digits = 6
             continue
         else:
             digits -= 1
@@ -57,4 +60,6 @@ def gen_embedding_sequence(n):
 
 #print(smallest_digits(5613123144, 4))
 #print(test_string_embedding(211,11211))
-print(gen_embedding_sequence(2))
+seq = gen_embedding_sequence()
+print(seq)
+print(len(seq))
