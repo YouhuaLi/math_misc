@@ -4,6 +4,53 @@ sys.path.insert(0, '/Users/yli/code/conway99')
 from conway99 import *
 import numpy as np
 
+def initial_vertex_clusters(b):
+    vertex_clusters = itertools.product(range(3),[0,1],[0,1])
+    return vertex_clusters
+
+def test_solution():
+    adjancent_matrix = gen_adjacent_matrix()
+    if lambda_compatible(adjancent_matrix) and \
+      mu_compatible(adjancent_matrix) and \
+      meets_adjacency_requirements(adjancent_matrix, debug=True) and \
+      graph_is_valid(adjancent_matrix):
+        return True
+    else:
+        return False
+
+def gen_adjacent_matrix():
+    adjacent_matrix = numpy.empty((9,9),dtype='int')
+    for i in range(9):
+        for j in range(9):
+            adjacent_matrix[i,j] = 0
+    vertex_to_matrix_index = {}
+
+    current_solution_stack = list(zip(solution_stack[0:][::2], solution_stack[1:][::2]))
+    #初始化各点在图中的序号，solution的第一个序号为3
+    i = 3
+    for vertex_group in current_solution_stack:
+        vertex_to_matrix_index[vertex_group[0]] = i
+        vertex_to_matrix_index[vertex_group[1]] = i
+        i += 1
+    #print(vertex_to_matrix_index)
+
+    for vertex_group in current_solution_stack:
+        #print(vertex_group)
+        v1 = vertex_group[0]
+        v2 = vertex_group[1]
+        index = vertex_to_matrix_index[v1]
+
+        adjacent_matrix[index, v1[0]] = 1
+        adjacent_matrix[v1[0], index] = 1
+        adjacent_matrix[index, v2[0]] = 1
+        adjacent_matrix[v2[0], index] = 1
+
+        adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v1]]] = 1
+        adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v1]], index] = 1
+        adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v2]]] = 1
+        adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v2]], index] = 1
+    return adjacent_matrix
+
 def v1_gt_v2(v1, v2): #return true if v1>v2
     if v1[0] > v2[0] or \
        v1[0] == v2[0] and v1[1] > v2[1] or \
@@ -63,6 +110,25 @@ def get_next_sibling_vertex():
             vertex = v
             break
     return vertex
+#初始化工作
+srg = (9,4,1,2)
+v = srg[0]
+k = srg[1]
+lbd = srg[2]
+mu = srg[3]
+
+#初始块数
+block_count = v // ( 2 + lbd )
+
+
+vertex_to_sibling = {}
+
+pending_vertex = list(initial_vertex_clusters(block_count))
+
+index = v // block_count
+for vertex in pending_vertex:
+    vertex_to_sibling[vertex] = (vertex[0], vertex[1], 0 if vertex[2] == 1 else 1)
+
 
 blocks ={}
 avaiable_vertex = []
@@ -89,13 +155,17 @@ while True:
     #print("search_sibling is %s" % search_sibling)
     if len(avaiable_vertex) == 0: #no more vertex to test. solution is ready \
         #for test
-        print("solution is ready for test %s" % solution_stack)
-        pre_vertex = solution_stack.pop()
-        avaiable_vertex.append(pre_vertex)
-        avaiable_vertex.sort()
-        search_sibling = True
-        #break
-        continue
+        if test_solution():
+            print("Found a GOOD soution: %s" % str(solution_stack))
+            matrix = gen_adjacent_matrix()
+            print('\n'.join(', '.join(str(x) for x in row) for row in matrix))
+            break
+        else:
+            pre_vertex = solution_stack.pop()
+            avaiable_vertex.append(pre_vertex)
+            avaiable_vertex.sort()
+            search_sibling = True
+            continue
     else:
         if len(solution_stack) < 2: #searching finished
             print("finished searching and no soltion was found.")
