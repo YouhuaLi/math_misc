@@ -59,7 +59,7 @@ def get_next_sibling_vertex():
     #print("current_max_vertex is %s" % str(current_max_vertex))
 
     for v in avaiable_vertex:
-        if v1_gt_v2(v, current_max_vertex):
+        if v1_gt_v2(v, solution_stack[-1]) and v1_gt_v2(v, current_max_vertex):
             vertex = v
             break
     return vertex
@@ -75,7 +75,7 @@ for block in blocks:
 
 #print(avaiable_vertex)
 
-solution_stack = [(0,0,0), (1,0,0)]
+solution_stack = [(0,0,0), (2,1,1)]
 
 for vertex in solution_stack:
     avaiable_vertex.remove(vertex)
@@ -83,14 +83,18 @@ for vertex in solution_stack:
 
 search_sibling = False
 while True:
-    pre_child = (-1, 0, 0)
-    print(solution_stack)
+    pre_vertex = (-1, 0, 0)
+    #print("solution_stack is %s" % str(solution_stack))
+    #print("avaiable_vertex is %s" % str(avaiable_vertex))
+    #print("search_sibling is %s" % search_sibling)
     if len(avaiable_vertex) == 0: #no more vertex to test. solution is ready \
         #for test
         print("solution is ready for test %s" % solution_stack)
-        #avaiable_vertex.append(solution_stack.pop())
+        pre_vertex = solution_stack.pop()
+        avaiable_vertex.append(pre_vertex)
+        avaiable_vertex.sort()
         search_sibling = True
-        break
+        #break
         continue
     else:
         if len(solution_stack) < 2: #searching finished
@@ -99,13 +103,14 @@ while True:
         if search_sibling: # need search sibling
             next_vertex = get_next_sibling_vertex()
         else: # need to search child
-            next_vertex = get_next_child_vertex(pre_child)
+            next_vertex = get_next_child_vertex(pre_vertex)
 
         if next_vertex == None: #can't find new vertex, back one level
-            vertex = solution_stack.pop()
-            pre_child = vertex
-            avaiable_vertex.append(vertex)
+            pre_vertex = solution_stack.pop()
+            avaiable_vertex.append(pre_vertex)
             avaiable_vertex.sort()
+            #print(solution_stack[-1])
+            #print(avaiable_vertex[-1])
             search_sibling = True
         else:
             if search_sibling:
