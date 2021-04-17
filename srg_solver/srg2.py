@@ -17,37 +17,58 @@ def test_solution(adjancent_matrix):
     else:
         return False
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 def gen_adjacent_matrix():
-    adjacent_matrix = numpy.empty((9,9),dtype='int')
-    for i in range(9):
-        for j in range(9):
+    adjacent_matrix = numpy.empty((v,v),dtype='int')
+    for i in range(v):
+        for j in range(v):
             adjacent_matrix[i,j] = 0
     vertex_to_matrix_index = {}
 
-    current_solution_stack = list(zip(solution_stack[0:][::2], solution_stack[1:][::2]))
-    #初始化各点在图中的序号，solution的第一个序号为3
-    i = 3
-    for vertex_group in current_solution_stack:
-        vertex_to_matrix_index[vertex_group[0]] = i
-        vertex_to_matrix_index[vertex_group[1]] = i
-        i += 1
-    #print(vertex_to_matrix_index)
+    #chuncked_solution_stack = list(zip(solution_stack[0:][::2], solution_stack[1:][::2]))
+    chunked_solution_stack = list(chunks(solution_stack, vertex_group_size))
+    #print(chunked_solution_stack)
+    #初始点在图中的序号，solution的第一个序号为 block_count
+    vertex_index = block_count
+    vertex_sibling_index = {}
+    for vertex_group in chunked_solution_stack:
+        for vertex in vertex_group:
+            parent_vertex_index = vertex[0]
+            adjacent_matrix[vertex_index][parent_vertex_index] = 1
+            adjacent_matrix[parent_vertex_index][vertex_index] = 1
 
-    for vertex_group in current_solution_stack:
-        #print(vertex_group)
-        v1 = vertex_group[0]
-        v2 = vertex_group[1]
-        index = vertex_to_matrix_index[v1]
+            if (vertex[0],vertex[1]) in vertex_sibling_index:
+                vertex_sibling_index[(vertex[0],vertex[1])].append(vertex_index)
+            else:
+                vertex_sibling_index[(vertex[0],vertex[1])]=[vertex_index]
+        vertex_index += 1
+    #print(vertex_sibling_index)
 
-        adjacent_matrix[index, v1[0]] = 1
-        adjacent_matrix[v1[0], index] = 1
-        adjacent_matrix[index, v2[0]] = 1
-        adjacent_matrix[v2[0], index] = 1
+    for siblings_parents in vertex_sibling_index.values():
+        block_index_pairs = itertools.combinations(siblings_parents, 2)
+        for pair in block_index_pairs:
+            adjacent_matrix[pair[0],pair[1]]=1
+            adjacent_matrix[pair[1],pair[0]]=1
 
-        adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v1]]] = 1
-        adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v1]], index] = 1
-        adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v2]]] = 1
-        adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v2]], index] = 1
+    # for vertex_group in chunked_solution_stack:
+    #     #print(vertex_group)
+    #     v1 = vertex_group[0]
+    #     v2 = vertex_group[1]
+    #     index = vertex_to_matrix_index[v1]
+
+    #     adjacent_matrix[index, v1[0]] = 1
+    #     adjacent_matrix[v1[0], index] = 1
+    #     adjacent_matrix[index, v2[0]] = 1
+    #     adjacent_matrix[v2[0], index] = 1
+
+    #     adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v1]]] = 1
+    #     adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v1]], index] = 1
+    #     adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v2]]] = 1
+    #     adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v2]], index] = 1
     return adjacent_matrix
 
 def v1_gt_v2(v1, v2): #return true if v1>v2
@@ -104,6 +125,8 @@ def get_next_sibling_vertex():
     current_max_vertex = max_vertex(sorted(last_vertex_group))
     #print("current_max_vertex is %s" % str(current_max_vertex))
 
+    # may search only the first half of the list
+    #for v in avaiable_vertex[:len(avaiable_vertex) // 2 + 1]:
     for v in avaiable_vertex:
         if v1_gt_v2(v, solution_stack[-1]) and v1_gt_v2(v, current_max_vertex):
             vertex = v
@@ -125,7 +148,7 @@ balde_in_block_count = k // (lbd + 1)
 #每一块扇叶中，点的个数
 vertex_in_blade_count = lbd + 1
 
-#每一组扇叶中的配对后的点个数：
+#每一组扇叶中的配对后的每组中点个数：
 vertex_group_size = k // ( 1 + lbd )
 
 vertex_to_sibling = {}
@@ -161,11 +184,12 @@ while True:
     #print("avaiable_vertex is %s" % str(avaiable_vertex))
     #print("search_sibling is %s" % search_sibling)
     if len(avaiable_vertex) == 0: #no more vertex to test. solution is ready \
-        print("found a solution for test %s" % str(solution_stack))
-        break
+        #print("found a solution for test %s" % str(solution_stack))
         matrix = gen_adjacent_matrix()
+        #break
         if test_solution(matrix):
-            print("Found a GOOD soution: %s" % str(solution_stack))
+            print("Found a GOOD soution:")
+            print(solution_stack)
             print('\n'.join(', '.join(str(x) for x in row) for row in matrix))
             break
         else:
