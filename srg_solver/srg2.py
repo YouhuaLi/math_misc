@@ -5,15 +5,14 @@ from conway99 import *
 import numpy as np
 
 def initial_vertex_clusters(b):
-    vertex_clusters = itertools.product(range(3),[0,1],[0,1])
+    vertex_clusters = itertools.product(range(block_count),range(balde_in_block_count),range(vertex_in_blade_count))
     return vertex_clusters
 
-def test_solution():
-    adjancent_matrix = gen_adjacent_matrix()
-    if lambda_compatible(adjancent_matrix) and \
-      mu_compatible(adjancent_matrix) and \
-      meets_adjacency_requirements(adjancent_matrix, debug=True) and \
-      graph_is_valid(adjancent_matrix):
+def test_solution(adjancent_matrix):
+    if lambda_compatible(adjancent_matrix,  lmbda=lbd) and \
+      mu_compatible(adjancent_matrix, mu=mu) and \
+      graph_is_valid(adjancent_matrix, lmbda=lbd, mu=mu, max_degree=k):
+      #meets_adjacency_requirements(adjancent_matrix, lmbda=lbd, mu=mu, debug=False) and \
         return True
     else:
         return False
@@ -95,7 +94,7 @@ def get_next_child_vertex(pre_child):
 
 def get_next_sibling_vertex():
     vertex = None
-    q = len(solution_stack) % 2
+    q = len(solution_stack) % vertex_group_size
     if q != 0:
         last_vertex_group = solution_stack[ -1 * q:]
     else:
@@ -111,15 +110,23 @@ def get_next_sibling_vertex():
             break
     return vertex
 #初始化工作
-srg = (9,4,1,2)
-v = srg[0]
-k = srg[1]
-lbd = srg[2]
-mu = srg[3]
+#argv = (9,4,1,2)
+v = int(sys.argv[1])
+k = int(sys.argv[2])
+lbd = int(sys.argv[3])
+mu = int(sys.argv[4])
 
 #初始块数
-block_count = v // ( 2 + lbd )
+block_count = v // ( 2 + lbd ) # 总边数 // 每块边数 = (vk/2) / (k+(k*lbd)/2)
 
+#每一个块中，点组（扇叶）的个数
+balde_in_block_count = k // (lbd + 1)
+
+#每一块扇叶中，点的个数
+vertex_in_blade_count = lbd + 1
+
+#每一组扇叶中的配对后的点个数：
+vertex_group_size = k // ( 1 + lbd )
 
 vertex_to_sibling = {}
 
@@ -132,8 +139,8 @@ for vertex in pending_vertex:
 
 blocks ={}
 avaiable_vertex = []
-for i in range(3):
-    blocks[i]=list(itertools.product([i], range(2), range(2)))
+for i in range(block_count):
+    blocks[i]=list(itertools.product([i], range(balde_in_block_count), range(vertex_in_blade_count)))
 
 for block in blocks:
     for vertex in blocks[block]:
@@ -141,7 +148,7 @@ for block in blocks:
 
 #print(avaiable_vertex)
 
-solution_stack = [(0,0,0), (2,1,1)]
+solution_stack = [(0, 0, 0), (block_count-1, 0, 0)]
 
 for vertex in solution_stack:
     avaiable_vertex.remove(vertex)
@@ -154,10 +161,11 @@ while True:
     #print("avaiable_vertex is %s" % str(avaiable_vertex))
     #print("search_sibling is %s" % search_sibling)
     if len(avaiable_vertex) == 0: #no more vertex to test. solution is ready \
-        #for test
-        if test_solution():
+        print("found a solution for test %s" % str(solution_stack))
+        break
+        matrix = gen_adjacent_matrix()
+        if test_solution(matrix):
             print("Found a GOOD soution: %s" % str(solution_stack))
-            matrix = gen_adjacent_matrix()
             print('\n'.join(', '.join(str(x) for x in row) for row in matrix))
             break
         else:
