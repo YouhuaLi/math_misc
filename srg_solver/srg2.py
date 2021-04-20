@@ -8,7 +8,28 @@ def initial_vertex_clusters(b):
     vertex_clusters = itertools.product(range(block_count),range(balde_in_block_count),range(vertex_in_blade_count))
     return vertex_clusters
 
-def test_solution(adjancent_matrix):
+def test_partial_solution(adjancent_matrix, debug=False):
+    if debug:
+        lambda_test = lambda_compatible(adjancent_matrix,  lmbda=lbd)
+        mu_test = mu_compatible(adjancent_matrix, mu=mu)
+        print("lambda_compatible is %s" % lambda_compatible(adjancent_matrix,  lmbda=lbd))
+        print("mu_compatible is %s" % mu_compatible(adjancent_matrix, mu=mu))
+        if lambda_test and mu_test:
+            return True
+        else:
+            return False
+    else:
+        if lambda_compatible(adjancent_matrix,  lmbda=lbd) and \
+        mu_compatible(adjancent_matrix, mu=mu):
+            return True
+        else:
+            return False
+
+def test_solution(adjancent_matrix, debug=False):
+    if debug:
+        print("lambda_compatible is %s" % lambda_compatible(adjancent_matrix,  lmbda=lbd))
+        print("mu_compatible is %s" % mu_compatible(adjancent_matrix, mu=mu))
+        print("graph_is_valid is %s" % graph_is_valid(adjancent_matrix, lmbda=lbd, mu=mu, max_degree=k))
     if lambda_compatible(adjancent_matrix,  lmbda=lbd) and \
       mu_compatible(adjancent_matrix, mu=mu) and \
       graph_is_valid(adjancent_matrix, lmbda=lbd, mu=mu, max_degree=k):
@@ -54,21 +75,6 @@ def gen_adjacent_matrix():
             adjacent_matrix[pair[0],pair[1]]=1
             adjacent_matrix[pair[1],pair[0]]=1
 
-    # for vertex_group in chunked_solution_stack:
-    #     #print(vertex_group)
-    #     v1 = vertex_group[0]
-    #     v2 = vertex_group[1]
-    #     index = vertex_to_matrix_index[v1]
-
-    #     adjacent_matrix[index, v1[0]] = 1
-    #     adjacent_matrix[v1[0], index] = 1
-    #     adjacent_matrix[index, v2[0]] = 1
-    #     adjacent_matrix[v2[0], index] = 1
-
-    #     adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v1]]] = 1
-    #     adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v1]], index] = 1
-    #     adjacent_matrix[index, vertex_to_matrix_index[vertex_to_sibling[v2]]] = 1
-    #     adjacent_matrix[vertex_to_matrix_index[vertex_to_sibling[v2]], index] = 1
     return adjacent_matrix
 
 def v1_gt_v2(v1, v2): #return true if v1>v2
@@ -109,8 +115,16 @@ def get_next_child_vertex(pre_child):
 
     for v in avaiable_vertex:
         if v[0] not in used_group_index and v1_gt_v2(v, pre_child):
-            vertex = v
-            break
+            solution_stack.append(v)
+            if test_partial_solution(gen_adjacent_matrix(), debug =True):
+                vertex = v
+                solution_stack.pop()
+                break
+            solution_stack.pop()
+    # for v in avaiable_vertex:
+    #     if v[0] not in used_group_index and v1_gt_v2(v, pre_child):
+    #         vertex = v
+    #         break
     return vertex
 
 def get_next_sibling_vertex():
@@ -127,10 +141,23 @@ def get_next_sibling_vertex():
 
     # may search only the first half of the list
     #for v in avaiable_vertex[:len(avaiable_vertex) // 2 + 1]:
+    current_node = solution_stack.pop()
     for v in avaiable_vertex:
         if v1_gt_v2(v, solution_stack[-1]) and v1_gt_v2(v, current_max_vertex):
-            vertex = v
+            solution_stack.append(v)
+            if test_partial_solution(gen_adjacent_matrix(), debug =True):
+                vertex = v
+                solution_stack.pop()
             break
+            solution_stack.pop()
+    solution_stack.append(current_node)
+    # # may search only the first half of the list
+    # for v in avaiable_vertex[:len(avaiable_vertex) // 2 + 1]:
+    # #for v in avaiable_vertex:
+    #     if v1_gt_v2(v, solution_stack[-1]) and v1_gt_v2(v, current_max_vertex):
+    #         vertex = v
+    #         break
+    
     return vertex
 #初始化工作
 #argv = (9,4,1,2)
@@ -140,6 +167,11 @@ lbd = int(sys.argv[3])
 mu = int(sys.argv[4])
 
 #初始块数
+if v % (2 + lbd) !=0:
+    print("sorry, unsported or wrong paramters.")
+    sys.exit(0)
+
+
 block_count = v // ( 2 + lbd ) # 总边数 // 每块边数 = (vk/2) / (k+(k*lbd)/2)
 
 #每一个块中，点组（扇叶）的个数
@@ -156,8 +188,8 @@ vertex_to_sibling = {}
 pending_vertex = list(initial_vertex_clusters(block_count))
 
 index = v // block_count
-for vertex in pending_vertex:
-    vertex_to_sibling[vertex] = (vertex[0], vertex[1], 0 if vertex[2] == 1 else 1)
+# for vertex in pending_vertex:
+#     vertex_to_sibling[vertex] = (vertex[0], vertex[1], 0 if vertex[2] == 1 else 1)
 
 
 blocks ={}
@@ -169,24 +201,34 @@ for block in blocks:
     for vertex in blocks[block]:
         avaiable_vertex.append(vertex)
 
-#print(avaiable_vertex)
+print(avaiable_vertex)
 
-solution_stack = [(0, 0, 0), (block_count-1, 0, 0)]
+solution_stack = [ \
+  (0, 0, 1), (1, 0, 0), \
+  (0, 1, 0), (2, 0, 0), \
+  (0, 1, 1), (3, 0, 0), \
+  (0, 2, 0), (4, 0, 0), \
+  ]
 
 for vertex in solution_stack:
     avaiable_vertex.remove(vertex)
 
 
 search_sibling = False
-while True:
+counter = 500
+while counter > 0:
+    counter -=1
     pre_vertex = (-1, 0, 0)
     #print("solution_stack is %s" % str(solution_stack))
     #print("avaiable_vertex is %s" % str(avaiable_vertex))
     #print("search_sibling is %s" % search_sibling)
     if len(avaiable_vertex) == 0: #no more vertex to test. solution is ready \
-        #print("found a solution for test %s" % str(solution_stack))
+        # print("found a solution for test %s" % str(solution_stack))
         matrix = gen_adjacent_matrix()
-        #break
+        # test_solution(matrix, debug=True)
+        # print('\n'.join(', '.join(str(x) for x in row) for row in matrix))
+        # break
+        
         if test_solution(matrix):
             print("Found a GOOD soution:")
             print(solution_stack)
