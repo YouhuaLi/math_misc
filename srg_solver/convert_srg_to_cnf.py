@@ -1,9 +1,10 @@
 from sympy.logic.boolalg import to_cnf
-from sympy import symbols
+from sympy import symbols, Symbol
 import numpy as np
 import sys
 import itertools
 import copy
+import re
 
 v = int(sys.argv[1])
 k = int(sys.argv[2])
@@ -11,7 +12,7 @@ lbd = int(sys.argv[3])
 mu = int(sys.argv[4])
 
 def tuple_to_symbol(t): # convert (1,2) to symbol x12
-    symbol_index = t[0] * (v - t[0]) + t[1]
+    symbol_index = ( (2 * v - 3) * t[0] - t[0] * t[0]  ) // 2 + t[1]
     return symbols('x%s' % str(symbol_index))
 
 #return list of tuples (edges) that share one vertex in edge e
@@ -62,7 +63,7 @@ def gen_mu_clause(edge):
     if mu == 1:
         for (n1, n2) in neighbors:
             p = ~e & tuple_to_symbol(n1) & tuple_to_symbol(n2)
-            for n in copyed_neighbors:
+            for n in neighbors:
                 if n != (n1, n2):
                     n_s_1 = tuple_to_symbol(n[0])
                     n_s_2 = tuple_to_symbol(n[1])
@@ -78,16 +79,33 @@ def gen_clause(edge):
     mu_clase = gen_mu_clause(edge)
     return lbd_clause | mu_clase
 
+#conver symbols tring to cnf file output
+def convert_to_cnf_file_format(s, variabl_count):
+    clause_count = s.count('&') + 1
+    header = "c srg v=%d k=%d lbd=%d mu=%d\nc\n" % (v, k, lbd, mu)
+    header += "p cnf %d %d\n" % (variabl_count, clause_count)
+    rep = {"x": "", "~": "-", "& ": "0\n", \
+          "(": "", ")": "", "x": "", "|": ""} # define desired replacements here
+
+    # use these three lines to do the replacement
+    rep = dict((re.escape(k), v) for k, v in rep.items())
+
+    #Python 3 renamed dict.iteritems to dict.items so use rep.items() for latest versions
+    pattern = re.compile("|".join(rep.keys()))
+    body = pattern.sub(lambda m: rep[re.escape(m.group(0))], s).strip()
+    return header + body + " 0"
 
 vertexs = range(v)
 edges = set(itertools.combinations(vertexs, 2))
+#print(edges)
 
 #print(edges)
 clause = True
 for edge in edges:
+    print(tuple_to_symbol(edge))
     clause &= gen_clause(edge)
 
 print(clause)
-cnf_clause_string = str(to_cnf(clause, simplify=False))
+cnf_clause_string = convert_to_cnf_file_format(str(to_cnf(clause)), len(clause.atoms(Symbol)))
 print(cnf_clause_string)
 
