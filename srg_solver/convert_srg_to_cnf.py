@@ -12,7 +12,8 @@ lbd = int(sys.argv[3])
 mu = int(sys.argv[4])
 
 def tuple_to_symbol(t): # convert (1,2) to symbol x12
-    symbol_index = ( (2 * v - 3) * t[0] - t[0] * t[0]  ) // 2 + t[1]
+    #symbol_index = ( (2 * v - 3) * t[0] - t[0] * t[0]  ) // 2 + t[1]
+    symbol_index = str(t[0]) + str(t[1])
     return symbols('x%s' % str(symbol_index))
 
 #return list of tuples (edges) that share one vertex in edge e
@@ -41,6 +42,7 @@ def gen_neighbors(e):
 
 def gen_lbd_clause(edge):
     neighbors = gen_neighbors(edge)
+    print(edge)
     #print(neighbors)
     c = tuple_to_symbol(edge)
     if lbd == 0:
@@ -48,9 +50,36 @@ def gen_lbd_clause(edge):
             n_s_1 = tuple_to_symbol(n1)
             n_s_2 = tuple_to_symbol(n2)
             l = n_s_1 & n_s_2 
-            c &= ~l 
+            c &= ~l
+    elif lbd == 1:
+        for (postive_neighbor1, postive_neighbor2) in neighbors:
+            #print("postive_neighbors %s" % str((postive_neighbor1, postive_neighbor2)))
+            s = tuple_to_symbol(postive_neighbor1) & tuple_to_symbol(postive_neighbor2)
+            l = True
+            negative_neighbors = [n for n in neighbors if n not in [(postive_neighbor1, postive_neighbor2)]]
+            #print("negative_neighbors %s" % str(negative_neighbors))
+            for (n1, n2) in negative_neighbors:
+                #print((n1, n2))
+                l &= ~(tuple_to_symbol(n1) & tuple_to_symbol(n2))
+            s &= l
+            #print(s)
+        c &= s
+    else: #blow code have bugs
+        for postive_neighbors in itertools.combinations(neighbors, lbd):
+            print("postive_neighbors %s" % str(postive_neighbors))
+            s = True
+            l = True
+            for (postive_neighbor1, postive_neighbor2) in postive_neighbors:
+                l &= tuple_to_symbol(postive_neighbor1) & tuple_to_symbol(postive_neighbor2)
+            negative_neighbors = [n for n in neighbors if n not in list(postive_neighbors)]
+            print("negative_neighbors %s" % str(negative_neighbors))
+            for (n1, n2) in negative_neighbors:
+                l &= ~(tuple_to_symbol(n1) & tuple_to_symbol(n2))
+            s &= l
+            #print(s)
+        c &=s
     #postive_neighbors = itertools.combinations(neighbors, lbd)
-    #print(c)
+    print(c)
     return c
 
 
@@ -102,10 +131,9 @@ edges = set(itertools.combinations(vertexs, 2))
 #print(edges)
 clause = True
 for edge in edges:
-    print(tuple_to_symbol(edge))
+    #print(tuple_to_symbol(edge))
     clause &= gen_clause(edge)
 
-print(clause)
-cnf_clause_string = convert_to_cnf_file_format(str(to_cnf(clause)), len(clause.atoms(Symbol)))
-print(cnf_clause_string)
+#cnf_clause_string = convert_to_cnf_file_format(str(to_cnf(clause)), len(clause.atoms(Symbol)))
+#print(cnf_clause_string)
 
