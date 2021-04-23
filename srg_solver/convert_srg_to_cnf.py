@@ -9,9 +9,12 @@ k = int(sys.argv[2])
 lbd = int(sys.argv[3])
 mu = int(sys.argv[4])
 
-def tuple_to_symbol(t): # convert (1,2) to symbol x12
-    symbol_index = ( (2 * v - 3) * t[0] - t[0] * t[0]  ) // 2 + t[1]
-    #symbol_index = str(t[0]) + str(t[1])
+def tuple_to_symbol(t, debug=False): # convert (1,2) to symbol x12, if debug==True
+    if debug:
+        symbol_index = str(t[0]) + str(t[1])
+    else:
+        symbol_index = ( (2 * v - 3) * t[0] - t[0] * t[0]  ) // 2 + t[1]
+
     return symbols('x%s' % str(symbol_index))
 
 #return list of tuples (edges) that share one vertex in edge e
@@ -38,7 +41,7 @@ def gen_neighbors(e):
             #print("neighbor of %s is %s" % (str(e), str(r[-1])))
     return r
 
-def gen_lbd_clause(edge):
+def gen_lbd_clause(edge, debug=False):
     neighbors = gen_neighbors(edge)
     #print(edge)
     #print(neighbors)
@@ -65,6 +68,7 @@ def gen_lbd_clause(edge):
             #print(m)
         c &= m
     else: #blow code have bugs
+        m = False
         for postive_neighbors in itertools.combinations(neighbors, lbd):
             #print("postive_neighbors %s" % str(postive_neighbors))
             s = True
@@ -76,16 +80,15 @@ def gen_lbd_clause(edge):
             for (n1, n2) in negative_neighbors:
                 l &= ~(tuple_to_symbol(n1) & tuple_to_symbol(n2))
             s &= l
+            m |= s
             #print(s)
-        c &=s
+        c &=m
     #postive_neighbors = itertools.combinations(neighbors, lbd)
     #print(c)
     return c
 
 
-def gen_mu_clause(edge):
-    if mu == 0:
-        return False
+def gen_mu_clause(edge, debug=False):
     neighbors = gen_neighbors(edge)
     #print(neighbors)
     c = False
@@ -122,6 +125,22 @@ def gen_mu_clause(edge):
     #print(c)
     return c
 
+#set the first k varialbes to be True, then v-k variables to be False
+#only run when debug==False
+def gen_k_clause(debug = False):
+    if debug: return True
+    postive_edges = edges[:k]
+    negative_edges = edges[k:v-1]
+    c = True
+    for p_e in postive_edges:
+        c &= tuple_to_symbol(p_e)
+    for n_e in negative_edges:
+        c &= ~tuple_to_symbol(n_e)
+
+    #print("k_clause is %s" % str(c))
+    return c
+
+
 def gen_clause(edge):
     lbd_clause = gen_lbd_clause(edge)
     mu_clase = gen_mu_clause(edge)
@@ -144,7 +163,7 @@ def convert_to_cnf_file_format(s, variabl_count):
     return header + body + " 0"
 
 vertexs = range(v)
-edges = set(itertools.combinations(vertexs, 2))
+edges = list(itertools.combinations(vertexs, 2))
 #print(edges)
 
 #print(edges)
@@ -153,9 +172,11 @@ for edge in edges:
     #print(tuple_to_symbol(edge))
     e_c = gen_clause(edge)
     clause &= e_c
-    #print(e_c)
-    break
 
+    #print(e_c)
+    #break
+clause &= gen_k_clause()
+#print(clause)
 cnf_clause_string = convert_to_cnf_file_format(str(to_cnf(clause)), len(clause.atoms(Symbol)))
 print(cnf_clause_string)
 
