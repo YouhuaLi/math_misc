@@ -176,5 +176,6 @@ for edge in edges:
     #print(e_c)
     #break
 clause &= gen_k_clause()
-print("start testing satisfiable...")
-#print(satisfiable(clause))
+print("start testing satisfiable... Good luck!")
+print(satisfiable(clause))
+print("finsihed.")
