@@ -16,57 +16,75 @@ def adjust_boxes(i):
         	return False
     #Algorithm step a6, Fig. 6. pefect fit on width.
     elif used_box[0] == Fraction(1, i+1):
-        if used_box[1] - Fraction(1, i) < used_box[0]:
-            new_box = (used_box[1] - Fraction(1, i), used_box[0])
+        new_edge = used_box[1] - Fraction(1, i)
+        if new_edge < Fraction(1, total_rectangles + 1): 
+            return True #new box is too small. skip adding.
+        if new_edge < used_box[0]:
+            new_box = (new_edge, used_box[0])
         else:
-        	new_box = (used_box[0], used_box[1] - Fraction(1, i))
+        	new_box = (used_box[0], new_edge)
         boxes.add(new_box) #new box of P_i in fig. 6
         #current_box_index -= 1 #should always be successful beacuse we just add a smaller box before this step.
     #Algorithm step a13. pefect fit on length.
     elif used_box[0] == Fraction(1, i):
-        if used_box[1] - Fraction(1, i+1) < used_box[0]:
-            new_box = (used_box[1] - Fraction(1, i+1), used_box[0])
+        new_edge = used_box[1] - Fraction(1, i+1)
+        if new_edge < Fraction(1, total_rectangles + 1): 
+            return True #new box is too small. skip adding.
+        if new_edge < used_box[0]:
+            new_box = (new_edge, used_box[0])
         else:
-        	new_box = (used_box[0], used_box[1] - Fraction(1, i+1))
+        	new_box = (used_box[0], new_edge)
         boxes.add(new_box)
         #current_box_index -= 1 #should always be successful beacuse we just add a smaller box before this step.
     #Algorithm step a17. Fig. 7
     elif used_box[0] > Fraction(1, i):
-        if used_box[0] - Fraction(1, i) < Fraction(1, i+1):
-            new_box = (used_box[0] - Fraction(1, i), Fraction(1, i+1))
+        new_edge = used_box[0] - Fraction(1, i)
+        if new_edge < Fraction(1, total_rectangles + 1): 
+            return True #new box is too small. skip adding.
+        if new_edge < Fraction(1, i+1):
+            new_box = (new_edge, Fraction(1, i+1))
         else:
-            new_box = (Fraction(1, i+1), used_box[0] - Fraction(1, i))
+            new_box = (Fraction(1, i+1), new_edge)
         #print("adding new box1: ", new_box)
         boxes.add(new_box) #new box of C_i in fig. 7
-        if used_box[0] < used_box[1] - Fraction(1, i+1):
-            new_box = (used_box[0] , used_box[1] - Fraction(1, i+1))
+        new_edge = used_box[1] - Fraction(1, i + 1)
+        if new_edge < Fraction(1, total_rectangles + 1): 
+            return True #new box is too small. skip adding.
+        if used_box[0] < new_edge:
+            new_box = (used_box[0] , new_edge)
         else:
-            new_box = (used_box[1] - Fraction(1, i+1), used_box[0])
+            new_box = (new_edge, used_box[0])
         #print("adding new box2: ", new_box)
         boxes.add(new_box) #new box of D_i in fig. 7
         #current_box_index -= 1 #should always be successful beacuse we just add two smaller boxes before this step.
     #Algorithm step a21. Fig. 8
     else:
-        if used_box[0] - Fraction(1, i+1) < Fraction(1, i):
-            new_box = (used_box[0] - Fraction(1, i+1), Fraction(1, i))
+        new_edge = used_box[0] - Fraction(1, i+1)
+        if new_edge < Fraction(1, total_rectangles + 1): 
+            return True #new box is too small. skip adding.
+        if new_edge < Fraction(1, i):
+            new_box = (new_edge, Fraction(1, i))
         else:
-            new_box = (Fraction(1, i), used_box[0] - Fraction(1, i+1))
+            new_box = (Fraction(1, i), new_edge)
         #print("adding new box: ", new_box)
         boxes.add(new_box) #new box of C_i in fig. 8
-        if used_box[0] < used_box[1] - Fraction(1, i):
-            new_box = (used_box[0] , used_box[1] - Fraction(1, i))
+        new_edge = used_box[1] - Fraction(1, i)
+        if new_edge < Fraction(1, total_rectangles + 1): 
+            return True #new box is too small. skip adding.
+        if used_box[0] < new_edge:
+            new_box = (used_box[0] , new_edge)
         else:
-            new_box = (used_box[1] - Fraction(1, i), used_box[0])
+            new_box = (new_edge, used_box[0])
         #print("adding new box: ", new_box)
         boxes.add(new_box) #new box of D_i in fig. 8
-        current_box_index -= 1 #should always be successful beacuse we just add two smaller boxes before this step.
+        #current_box_index -= 1 #should always be successful beacuse we just add two smaller boxes before this step.
     
-    #print("current boxes list BEFORE delete is:", boxes)
+    #print("boxes list BEFORE delete is:", boxes)
     #print("the box", boxes[current_box_index],  " is used by rectangle (1/%d, 1/%d) and being deleted." \
     #     % (i+1, i))
     #print("old box is: " , old_box.data)
     boxes.remove(used_box)
-    #print("current boxes list AFTER delete is:", boxes)
+    #print("boxes list AFTER delete is:", boxes)
     #print("\n")
 
     return True
@@ -94,10 +112,7 @@ def packing_into_box(i):
             pass
             #print("found box for use: ", boxes[current_box_index])
 
-    if adjust_boxes(i) == False:
-        return False
-    else:
-        return True
+    return adjust_boxes(i)
 
 '''
 boxes is a sorted list of avaiable boxes to be filled. 
@@ -109,8 +124,10 @@ boxes = sortedlist()
 boxes.add((Fraction(1, 2),  Fraction(1, 1)))
 
 current_box_index = 0
+total_rectangles = 10 ** 6
 
-for i in range(2, 10 ** 6 + 1):
+
+for i in range(2, total_rectangles + 1):
 	packing_result = packing_into_box(i)
 	if (packing_result == False):
 		break
