@@ -1,5 +1,5 @@
 from fractions import Fraction
-from blist import sortedlist
+from sortedcontainers import SortedList
 
 #fit (1/(i+1) , 1/i) into a box. adjust linked list of boxes 
 def adjust_boxes(i):
@@ -8,32 +8,32 @@ def adjust_boxes(i):
 	# Algorithm step a6. pefect fit both edges. just remove current box
     if used_box[0] == Fraction(1, i+1) and used_box[1] == Fraction(1, i):
         if current_box_index > 0: #try set current box to a smaller one
-        	current_box_index -= 1
+            current_box_index -= 1
         elif current_box_index != len(boxes): #try set current box to a bigger one
-        	current_box_index += 1
+            current_box_index += 1
         else:
-        	#used out boxes which should not happen. failing
-        	return False
+            #used out boxes which should not happen. failing
+            return False
     #Algorithm step a6, Fig. 6. pefect fit on width.
     elif used_box[0] == Fraction(1, i+1):
         new_edge = used_box[1] - Fraction(1, i)
-        if new_edge < Fraction(1, total_rectangles + 1): 
+        if new_edge < Fraction(1, total_rectangles + 1):
             return True #new box is too small. skip adding.
         if new_edge < used_box[0]:
             new_box = (new_edge, used_box[0])
         else:
-        	new_box = (used_box[0], new_edge)
+            new_box = (used_box[0], new_edge)
         boxes.add(new_box) #new box of P_i in fig. 6
         #current_box_index -= 1 #should always be successful beacuse we just add a smaller box before this step.
     #Algorithm step a13. pefect fit on length.
     elif used_box[0] == Fraction(1, i):
         new_edge = used_box[1] - Fraction(1, i+1)
-        if new_edge < Fraction(1, total_rectangles + 1): 
+        if new_edge < Fraction(1, total_rectangles + 1):
             return True #new box is too small. skip adding.
         if new_edge < used_box[0]:
             new_box = (new_edge, used_box[0])
         else:
-        	new_box = (used_box[0], new_edge)
+            new_box = (used_box[0], new_edge)
         boxes.add(new_box)
         #current_box_index -= 1 #should always be successful beacuse we just add a smaller box before this step.
     #Algorithm step a17. Fig. 7
@@ -82,7 +82,6 @@ def adjust_boxes(i):
     #print("boxes list BEFORE delete is:", boxes)
     #print("the box", boxes[current_box_index],  " is used by rectangle (1/%d, 1/%d) and being deleted." \
     #     % (i+1, i))
-    #print("old box is: " , old_box.data)
     boxes.remove(used_box)
     #print("boxes list AFTER delete is:", boxes)
     #print("\n")
@@ -120,7 +119,7 @@ element is a tuple of (width, length) while width < length.
 in the beginning, start with a (1/2, 1) box, and a rectangle of (1/2, 1) is already filled in.
 '''
 
-boxes = sortedlist()
+boxes = SortedList()
 boxes.add((Fraction(1, 2),  Fraction(1, 1)))
 
 current_box_index = 0
@@ -128,11 +127,11 @@ total_rectangles = 10 ** 6
 
 
 for i in range(2, total_rectangles + 1):
-	packing_result = packing_into_box(i)
-	if (packing_result == False):
-		break
+    packing_result = packing_into_box(i)
+    if packing_result == False:
+        break
 
 if packing_result:
-	print("success to fill till rectagle (1 / %d, 1 / %d)" % (i+1, i))
+    print("success to fill till rectagle (1 / %d, 1 / %d)" % (i+1, i))
 else:
-	print("failed")
+    print("failed")
