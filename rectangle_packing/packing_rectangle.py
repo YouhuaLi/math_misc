@@ -123,7 +123,7 @@ boxes = SortedList()
 boxes.add((Fraction(1, 2),  Fraction(1, 1)))
 
 current_box_index = 0
-total_rectangles = 10 ** 6
+total_rectangles = 10 ** 3
 
 
 for i in range(2, total_rectangles + 1):
@@ -133,5 +133,9 @@ for i in range(2, total_rectangles + 1):
 
 if packing_result:
     print("success to fill till rectagle (1 / %d, 1 / %d)" % (i+1, i))
+    print("remaining boxes size (width > 1 / %d) is: %d" % (total_rectangles + 1, len(boxes)))
+    print("the lagest 5 remaining boxes are:")
+    for box in boxes[-5:]:
+        print(box)
 else:
     print("failed")
